@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# No redirect rules are needed: the app uses hash routing, so every URL is
+# served by the single index.html and the client reads the fragment.
