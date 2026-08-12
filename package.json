@@ -1,19 +1,27 @@
 {
-  "name": "python-quiz",
+  "name": "onyeka-python-lab",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
+  "description": "Onyeka Python Lab - a Python and ML/AI learning app with quizzes, flashcards, boss battles and a live Python playground.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "build:portable": "vite build --config vite.config.portable.js && node scripts/rename-portable.mjs",
+    "build:all": "npm run build && npm run build:portable",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bank:report": "node scripts/bank-report.mjs"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.1.0"
+    "@vitejs/plugin-react": "4.7.0",
+    "vite": "7.3.6",
+    "vite-plugin-singlefile": "2.3.3",
+    "vitest": "3.2.7"
   }
 }

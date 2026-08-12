@@ -693,7 +693,7 @@ export default function PythonQuiz() {
           <div style={{ textAlign: "center", marginBottom: 40 }}>
             <div style={{ fontSize: 48, marginBottom: 8 }}>🐍</div>
             <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800, background: "linear-gradient(90deg, #3FB950, #58A6FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              Python Mastery Quiz
+              Onyeka Python Lab
             </h1>
             <p style={{ color: "#8b949e", marginTop: 8, fontSize: 14 }}>
               {topics.length} topics · {totalQuestions} questions · track your progress
