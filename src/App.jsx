@@ -12,6 +12,13 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import { EmptyState, BackLink, Button } from './components/ui.jsx'
 import HomeScreen from './modes/HomeScreen.jsx'
 import QuizScreen from './modes/QuizScreen.jsx'
+import DailyScreen from './modes/DailyScreen.jsx'
+import BossScreen from './modes/BossScreen.jsx'
+import FlashcardsScreen from './modes/FlashcardsScreen.jsx'
+import OrderingScreen from './modes/OrderingScreen.jsx'
+import PlaygroundScreen from './modes/PlaygroundScreen.jsx'
+import StatsScreen from './modes/StatsScreen.jsx'
+import { initDailyState } from './lib/daily.js'
 
 const NAV = [
   { route: 'home', label: 'Home' },
@@ -40,21 +47,20 @@ function DevBankBanner({ errors }) {
   )
 }
 
-function ComingSoon({ title }) {
-  return (
-    <EmptyState icon="🚧" title={`${title} is coming soon`} action={<BackLink />}>
-      This mode is not built yet.
-    </EmptyState>
-  )
-}
-
 export default function App() {
   const route = useHashRoute()
   const { theme, toggle } = useTheme()
   const { questions, errors } = useMemo(() => getBank(), [])
 
   const [progress, setProgress] = useLocalStorage(STORAGE_KEYS.progress, {})
-  const [, setSeen] = useLocalStorage(STORAGE_KEYS.seen, {})
+  const [seen, setSeen] = useLocalStorage(STORAGE_KEYS.seen, {})
+  const [srs, setSrs] = useLocalStorage(STORAGE_KEYS.srs, {})
+  const [daily, setDaily] = useLocalStorage(STORAGE_KEYS.daily, initDailyState())
+  const [bossRecord, setBossRecord] = useLocalStorage(STORAGE_KEYS.boss, {
+    highScore: 0,
+    bestCombo: 0,
+    runs: 0,
+  })
 
   /** Called when a quiz run finishes: update best/last score and per-question stats. */
   function handleRunComplete(topicId, { percent, results }) {
@@ -95,17 +101,27 @@ export default function App() {
           />
         )
       case 'daily':
-        return <ComingSoon title="Daily Challenge" />
+        return <DailyScreen bank={questions} daily={daily} setDaily={setDaily} />
       case 'boss':
-        return <ComingSoon title="Boss Battle" />
+        return (
+          <BossScreen bank={questions} bossRecord={bossRecord} setBossRecord={setBossRecord} />
+        )
       case 'flashcards':
-        return <ComingSoon title="Flashcards" />
+        return <FlashcardsScreen bank={questions} srs={srs} setSrs={setSrs} />
       case 'ordering':
-        return <ComingSoon title="Code Ordering" />
+        return <OrderingScreen bank={questions} />
       case 'playground':
-        return <ComingSoon title="Python Playground" />
+        return <PlaygroundScreen />
       case 'stats':
-        return <ComingSoon title="Stats" />
+        return (
+          <StatsScreen
+            bank={questions}
+            progress={progress}
+            seen={seen}
+            daily={daily}
+            bossRecord={bossRecord}
+          />
+        )
       default:
         return (
           <EmptyState icon="🔍" title="Page not found" action={<BackLink to="home" />}>
