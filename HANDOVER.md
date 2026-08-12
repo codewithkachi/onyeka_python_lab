@@ -1,105 +1,96 @@
-# Handover: Python Mastery Quiz App
+# Handover: Onyeka Python Lab
 
-## Upgrade scope (confirmed with the user — start here)
-The user has confirmed they want work on these four areas, in no particular priority order unless you ask:
+Current state as of the v2 rebuild. Read [README.md](README.md) for how to run and deploy,
+and [docs/AUTHORING.md](docs/AUTHORING.md) before touching question content.
 
-1. **More questions/topics or difficulty levels** — expand beyond the current fixed 5-questions-per-topic, 16-topic structure. Consider: adding more questions to existing topics, adding new topics, and/or introducing an Easy/Medium/Hard tiering (either per-question tagging within existing topics, or separate difficulty tracks). Ask the user which of these three they actually want before building, since "difficulty levels" could mean any of them.
-2. **Visual redesign** — the user is open to changing the current dark GitHub-style theme (see Design Language section below for what exists now). Confirm with them what direction they want (see the frontend-design skill/guidance available to you) rather than assuming — the current theme was a deliberate choice, not a placeholder, but they've now said they're open to changing it.
-3. **Save progress permanently** — currently `topicScores` is in-memory React state only and resets on refresh. This needs real persistence. Two realistic paths: (a) `localStorage` for a simple single-device solution — works fine once deployed as a real site (not inside a Claude.ai artifact sandbox, where localStorage is unavailable), or (b) a small backend + database if the user wants progress to follow them across devices/browsers. Ask which they want before building — it changes the architecture significantly (b requires auth).
-4. **Deploy it online with a real URL** — the project is already a working Vite build (`npm run build` produces a `dist/` folder). Static hosts like Vercel, Netlify, or GitHub Pages are the simplest fit given there's currently no backend. If item 3 goes the backend route, hosting needs a platform that supports that too (e.g., Vercel with serverless functions, or Railway/Render).
+## What exists now
 
-Note the dependency: if the user wants cross-device saved progress (3b) AND deployment (4), those two should be planned together since the backend choice affects the hosting choice.
+A Vite + React 18 app, rebuilt from a single 848-line file into a tested, modular
+codebase. **330 questions across all 29 topics**, seven screens, two shipping formats,
+116 passing tests.
 
-## Context
-This app was built by Claude (Anthropic) as a Claude.ai React artifact, then exported as a standalone Vite + React project so it can run outside the chat interface. You are picking this up to continue development/upgrades. This document gives you everything you need to understand the current state without re-deriving it from the code.
+| | |
+|---|---|
+| Questions | 330 (184 core Python, 146 ML/AI) |
+| Topics | 29, all populated |
+| Tests | 116 across 7 files |
+| Web build | `dist/` — deploy anywhere static |
+| Portable build | `dist-portable/onyeka-python-lab.html`, 369 KB, opens offline by double-click |
+| Dependencies | react, react-dom + 4 devDependencies. `npm audit`: 0 vulnerabilities |
 
-## What the app does
-A single-page, self-contained Python learning quiz. The user picks one of 16 Python topics from a home grid, answers 5 multiple-choice questions per topic, gets immediate feedback with an explanation after each answer, and sees a results screen with a score, percentage, and a review of any missed questions. Scores per topic persist for the duration of the browser session (in-memory only, not saved across reloads — see Known Limitations).
+**Modes:** topic quiz, Daily Challenge, Boss Battle, Flashcards, Code Ordering, Python
+Playground, Stats.
 
-## Tech stack
-- React 18 (function component, hooks only: `useState`)
-- Plain inline `style={{}}` objects for all styling — no CSS framework, no Tailwind, no styled-components
-- Fonts loaded via Google Fonts `@import` inside a `<style>` tag: JetBrains Mono (code/questions) and Sora (headings/UI)
-- Vite as the build tool / dev server
-- Zero external state management, zero backend, zero routing library — everything is client-side and single-file
+## The architecture rules that matter
 
-## File structure (in this delivery)
-```
-python-quiz-project/
-├── index.html          # Vite entry HTML
-├── package.json        # dependencies: react, react-dom, vite, @vitejs/plugin-react
-├── vite.config.js       # standard React plugin config
-└── src/
-    ├── main.jsx         # ReactDOM root render
-    └── App.jsx          # THE ENTIRE APP — all logic, all data, all styling lives here
-```
+**1. Nothing in `src/lib/` imports React or touches `window`.** `storage.js` is the single
+guarded exception. This is why scoring, streaks, spaced repetition and routing are all
+unit-tested with no DOM and no jsdom dependency. Keep it.
 
-Everything of substance is in `src/App.jsx`. There is currently no component decomposition — it's one ~900-line file with a `topics` data array and a single `PythonQuiz` component that does conditional rendering across three "screens" (home grid, active question, results).
+**2. `src/data/questions/index.js` and `src/data/topics.js` are frozen.** All 29 topic
+files are already imported by the barrel, so content work only ever edits one array
+inside one file. That is what makes it impossible for a content change to break the
+build. An empty topic just renders an empty state.
 
-## Data model
-`topics` is an array of 16 objects:
-```js
-{
-  id: number,
-  title: string,
-  icon: string (emoji),
-  color: string (hex, used as the topic's accent color throughout),
-  questions: [
-    {
-      q: string,
-      options: string[4],
-      answer: number (index into options),
-      explanation: string
-    }
-    // exactly 5 per topic
-  ]
-}
-```
-Topics currently included: Basic Syntax & Data Types, Data Structures, Control Structures, Functions & Scope, Classes & Inheritance, Lambda Functions, Classes, Methods, Modules & Packages, File Handling, Error/Exception Handling, OOP Concepts, Regular Expressions, Debugging & Testing, Recursion, Threading.
+**3. The score is derived, never stored.** `scoreOf(state)` counts correct results.
+The old code kept a separate `score` field alongside the answer log, which is exactly how
+the two drift apart — that bug class is now structurally impossible.
 
-Note: "Classes & Inheritance" (topic 5) and "Classes" (topic 7) and "Methods" (topic 8) have overlapping subject matter — this was requested by the user as separate topics in their original list and was kept distinct rather than merged. Worth flagging to the user if you plan to restructure the topic list.
+**4. Question data must be JS imports, never fetched JSON.** The portable build runs from
+`file://`, where `fetch` of a local file is blocked. This is the single most load-bearing
+constraint in the design.
 
-## Component state (all in `PythonQuiz`)
-- `selectedTopic` — null on the home screen, otherwise the active topic object
-- `currentQ` — index of the current question within the topic
-- `selected` — index of the option the user has clicked (before confirming)
-- `confirmed` — whether the user has locked in their answer for the current question
-- `score` — running correct-answer count for the current topic attempt
-- `finished` — whether the results screen should show
-- `topicScores` — `{ [topicId]: { score, total } }`, accumulates across topics for the session, drives the home-screen progress badges and the aggregate stats line
-- `wrongAnswers` — array of missed questions (with the user's chosen index) for the current attempt, shown on the results screen for review
+## Things that will bite you if you don't know them
 
-## Interaction flow
-1. Home grid → click a topic card → `startTopic()` resets all per-attempt state and enters question view
-2. Click an option → `handleSelect()` just sets `selected` (no scoring yet)
-3. Click "Confirm Answer" → `handleConfirm()` locks the answer, updates `score`/`wrongAnswers`, reveals correct/incorrect styling and the explanation box
-4. Click "Next Question" → `handleNext()` advances `currentQ`, or on the last question, writes into `topicScores` and sets `finished`
-5. Results screen → "Retry" restarts the same topic, "All Topics" returns home
+- **Only the portable file can be double-clicked.** The regular `dist/` build cannot —
+  browsers block external module scripts over `file://`. That is the entire reason
+  `vite.config.portable.js` exists.
+- **Hash routing is mandatory**, not a preference. History-API routing breaks under
+  `file://` and needs rewrite rules on static hosts.
+- **`localStorage` can throw on ACCESS, not just on write**, under an opaque origin —
+  verified: a `data:` URL raises `SecurityError`. Firefox's `privacy.file_unique_origin`
+  may do the same for the portable file. Hence the try/catch + in-memory fallback in
+  `storage.js`, and the notice the UI shows when `storageAvailable` is false.
+- **Pyodide is CDN-only and must never be bundled.** `scripts/rename-portable.mjs` warns
+  if the portable file exceeds 2 MB, which is the signal that something like this got
+  bundled by accident.
+- **The validator checks structure, not truth.** It cannot know whether `answerIndex`
+  points at the genuinely correct option. Playing a topic and reading the explanations is
+  a required manual step, not a nicety.
 
-## Design language (if you touch styling, stay consistent)
-- Dark theme, GitHub-dark-inspired palette: background `#0d1117`, card background `#161b22`, borders `#30363d`, primary text `#e6edf3`, muted text `#8b949e`
-- Each topic has its own accent hex color (`t.color`) used for its card border-on-hover glow, progress bar fill, and in-quiz accent (button, selected-option border, progress bar)
-- Correct/incorrect states use fixed colors regardless of topic: green `#3FB950` / `#1a3a1e` bg for correct, red `#FF6E6E` / `#2a1a1a` bg for incorrect
-- Monospace (JetBrains Mono) for code-like content (questions, options); Sora for headings and buttons
+## Remaining work
 
-## Known limitations / things a "continue the upgrade" pass should probably address
-1. **No persistence** — `topicScores` is component state only. Refreshing the page loses all progress. If the user wants progress saved across sessions in a real deployment, this needs `localStorage` (for a standalone site) — note that `localStorage` is NOT available inside a Claude.ai artifact sandbox, only in a real deployed build like this one.
-2. **No routing** — topic navigation is conditional rendering, not URL-based. Fine for a single-page tool, but means no shareable/bookmarkable links to a specific topic, and no browser back-button support.
-3. **Single file** — `App.jsx` is doing too much for further growth. A natural next step is splitting into `TopicGrid.jsx`, `QuizView.jsx`, `ResultsView.jsx`, and moving `topics` into its own `data/topics.js` (or fetched from a JSON/API if content is going to grow).
-4. **No accessibility pass** — no `aria-*` labels, no keyboard navigation for option selection (currently click/tap only), no focus management between questions.
-5. **No test coverage** — zero unit tests. If this becomes a maintained project, the scoring logic (`handleConfirm`, `handleNext`) is the highest-value thing to cover.
-6. **Content is static and fixed at 5 questions/topic** — there's no mechanism to add/import more questions without editing the array directly, no difficulty levels, and no randomization/shuffling of question or option order (so repeat attempts are identical).
-7. **Mobile responsiveness is basic** — the grid uses `repeat(auto-fill, minmax(240px, 1fr))` which works reasonably on mobile widths, but nothing has been explicitly tested/tuned below ~375px.
+**Content — the main outstanding item.** 330 of a targeted 464 questions. Every topic has
+questions and is playable; none has reached its full target yet. `npm run bank:report`
+shows exactly which topics are short and what type/tier mix each still needs. Follow
+`docs/AUTHORING.md`, work one topic file at a time, and commit per file.
 
-## What NOT to assume
-- Do not assume the user wants a backend. This has been entirely front-end/client-side by design so far.
-- Do not silently change the visual design language (dark GitHub-style theme) unless the user asks for a redesign — it was a deliberate choice, not a default.
-- Do not merge/remove the seemingly-overlapping topics (Classes / Classes & Inheritance / Methods) without checking with the user first — see note above.
+The core/ML split currently sits at 55.8% core against a ~60% target — core topics need
+slightly more of the remaining additions than ML topics do.
 
-## Suggested first questions to ask the user before making changes
-These narrow down the four confirmed upgrade areas above into buildable specs:
-- Persistence: localStorage (single device, simpler, no accounts) or a real backend with accounts (cross-device, more work)?
-- Content: more questions in existing topics, entirely new topics, difficulty tiers, or some combination?
-- Redesign: any reference aesthetic they like, or should you propose 2-3 directions for them to choose from?
-- Deployment: any hosting preference, or is "just get it a working public URL" sufficient (in which case Vercel or Netlify are the path of least resistance)?
-- Any specific new features beyond the four core areas (timer per question, shuffle, leaderboard, export results, light/dark toggle)?
+**Not yet done:**
+- `bank.completeness.test.js` — deliberately not added yet. It asserts every topic has hit
+  its target, so adding it now would mean a permanently red suite. Add it once content is
+  complete.
+- Drag-and-drop for code ordering. The ▲/▼ buttons work, are keyboard-accessible and work
+  on touch; pointer-drag would be a progressive enhancement on top, never a replacement.
+- Verifying `localStorage` on `file://` in **Firefox** specifically. Chrome/Edge are fine.
+  The fallback means the app degrades gracefully either way, but the notice wording could
+  be tuned once the answer is known.
+- The published URL. The GitHub Pages workflow is committed and gated on `npm test`;
+  it needs Pages enabling on the repo (Settings → Pages → Source → GitHub Actions).
+
+## Deliberate decisions, so they don't get "fixed"
+
+- **vite 7, not vite 5.** The original plan pinned vite 5; vite 5 carries a high-severity
+  advisory, and every plugin's peer range accepts vite 7. `npm audit` is clean at 7.
+- **System font stack, no webfonts.** The old app imported Google Fonts inside three
+  `<style>` blocks; that import silently fails offline and left the portable build
+  rendering in Times New Roman.
+- **No TypeScript.** The actual risk here is malformed question *data*, which a runtime
+  validator catches and types cannot (bad `answerIndex` values, duplicate ids).
+- **No react-router, no CSS framework.** 9 routes and a token-based stylesheet do not
+  justify the dependencies.
+- **Flashcards have no `explanation` field** — `back` already is the teaching content.
+- **`order` items are stored in the CORRECT order** and shuffled at display time. Storing
+  a pre-shuffled list plus a key is the classic way this goes wrong.
