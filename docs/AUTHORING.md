@@ -86,7 +86,7 @@ mistake.
   type: 'mcq',                 // see the table below
   prompt: '...',               // 10-400 chars
   code: String.raw`...`,       // optional on mcq/multi; REQUIRED on output/bug
-  explanation: '...',          // 20-600 chars
+  explanation: '...',          // 20-600 chars; omit on flashcards (see below)
   tags: ['arrays'],            // optional
   // plus exactly ONE answer shape, chosen by type
 }
@@ -99,7 +99,7 @@ mistake.
 | `output` | `code`, `options`, `answerIndex` | Guess-the-Output. The UI shows the code and asks what it prints. |
 | `bug` | `code`, `options`, `answerIndex` | Find-the-Bug. Options describe the defect or the fix. |
 | `order` | `items` | 3–7 lines **stored in the CORRECT order**. The app shuffles them for display and compares against this order. Never store a pre-shuffled list. |
-| `flashcard` | `back` | `prompt` is the front, `back` is the answer (3–400 chars). Never appears in graded quizzes. |
+| `flashcard` | `back` | `prompt` is the front, `back` is the answer (3–400 chars). **Omit `explanation`** — `back` already is the teaching content. Never appears in graded quizzes. |
 
 A question must define **only** its own type's answer fields. An `mcq` that also has
 `items` is a validation error, because it means a half-converted copy-paste.

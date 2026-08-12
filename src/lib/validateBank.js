@@ -74,7 +74,11 @@ export function validateQuestion(q, knownTopicIds) {
   }
 
   // --- required strings -----------------------------------------------------
-  for (const field of ['id', 'topic', 'tier', 'type', 'prompt', 'explanation']) {
+  // `explanation` is required everywhere EXCEPT flashcards, where `back` is
+  // already the teaching content and a second field would just duplicate it.
+  const requiredStrings = ['id', 'topic', 'tier', 'type', 'prompt']
+  if (q.type !== 'flashcard') requiredStrings.push('explanation')
+  for (const field of requiredStrings) {
     if (!isNonEmptyString(q[field])) errors.push(`${field} must be a non-empty string`)
   }
   if (errors.length) return errors // nothing else can be checked meaningfully
@@ -192,10 +196,12 @@ export function validateQuestion(q, knownTopicIds) {
   if (q.prompt.length < LIMITS.promptMin || q.prompt.length > LIMITS.promptMax) {
     errors.push(`prompt must be ${LIMITS.promptMin}-${LIMITS.promptMax} chars, got ${q.prompt.length}`)
   }
-  if (q.explanation.length < LIMITS.explanationMin || q.explanation.length > LIMITS.explanationMax) {
-    errors.push(
-      `explanation must be ${LIMITS.explanationMin}-${LIMITS.explanationMax} chars, got ${q.explanation.length}`,
-    )
+  if (typeof q.explanation === 'string') {
+    if (q.explanation.length < LIMITS.explanationMin || q.explanation.length > LIMITS.explanationMax) {
+      errors.push(
+        `explanation must be ${LIMITS.explanationMin}-${LIMITS.explanationMax} chars, got ${q.explanation.length}`,
+      )
+    }
   }
 
   // --- optional tags --------------------------------------------------------
