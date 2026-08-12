@@ -1,0 +1,128 @@
+/* Design tokens.
+ *
+ * The dark palette is the default and lives on bare :root, evolved from the
+ * original GitHub-dark scheme. Light mode overrides only the colour tokens.
+ *
+ * Fonts are a system stack on purpose: the previous version imported Sora and
+ * JetBrains Mono from Google Fonts, which silently fails offline and left the
+ * portable build rendering in Times New Roman. On Windows 11 this resolves to
+ * Segoe UI Variable and Cascadia Mono. Zero bytes, zero network, identical in
+ * dev, hosted and portable builds.
+ */
+
+:root {
+  /* surfaces */
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-2: #1c2230;
+  --surface-3: #21262d;
+  --border: #30363d;
+  --border-strong: #444c56;
+
+  /* text */
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --text-faint: #6e7681;
+
+  /* accents + state */
+  --accent: #58a6ff;
+  --accent-2: #3fb950;
+  --success: #3fb950;
+  --success-bg: #12261a;
+  --danger: #ff6e6e;
+  --danger-bg: #2a1a1a;
+  --warning: #d29922;
+  --warning-bg: #2d2513;
+  --focus: #58a6ff;
+
+  /* a per-topic accent is injected inline on cards; this is the fallback */
+  --topic-accent: var(--accent);
+
+  /* spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* type scale (1.25 modular) */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.25rem;
+
+  --lh-tight: 1.25;
+  --lh-body: 1.6;
+
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  /* elevation */
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-2: 0 8px 24px rgb(0 0 0 / 0.35);
+
+  /* motion */
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* fonts */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  --container: 1100px;
+  --container-narrow: 640px;
+}
+
+[data-theme='light'] {
+  --bg: #ffffff;
+  --surface: #f6f8fa;
+  --surface-2: #eaeef2;
+  --surface-3: #e3e8ee;
+  --border: #d0d7de;
+  --border-strong: #afb8c1;
+
+  --text: #1f2328;
+  --text-muted: #59636e;
+  --text-faint: #818b98;
+
+  --accent: #0969da;
+  --accent-2: #1a7f37;
+  --success: #1a7f37;
+  --success-bg: #dafbe1;
+  --danger: #cf222e;
+  --danger-bg: #ffebe9;
+  --warning: #9a6700;
+  --warning-bg: #fff8c5;
+  --focus: #0969da;
+
+  --shadow-1: 0 1px 2px rgb(31 35 40 / 0.1);
+  --shadow-2: 0 8px 24px rgb(31 35 40 / 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
